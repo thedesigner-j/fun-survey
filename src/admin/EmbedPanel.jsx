@@ -28,10 +28,10 @@ function CodeBlock({ code }) {
 
 export default function EmbedPanel() {
   const [transparent, setTransparent] = useState(true)
-  const [height, setHeight] = useState(760)
+  const [minHeight, setMinHeight] = useState(640)
 
   const code = `<iframe id="fun-survey" title="Survey" allow="clipboard-write"
-  style="width:100%;height:${height}px;border:0;display:block"></iframe>
+  style="width:100%;height:100vh;height:100dvh;min-height:${minHeight}px;border:0;display:block"></iframe>
 <script>
   (function () {
     var app = '${appUrl}';
@@ -41,11 +41,10 @@ export default function EmbedPanel() {
     var auth = /access_token|error_description/.test(location.hash) ? location.hash : '';
     frame.src = app + '/${transparent ? '?bg=transparent' : ''}' + auth;
     if (auth) history.replaceState(null, '', location.pathname + location.search);
-    // The admin gets the full screen; the survey goes back to its own height.
+    // Switching between the survey and the admin brings the frame fully into view.
     window.addEventListener('message', function (e) {
       if (e.origin !== app || !e.data || e.data.type !== 'fun-survey:view' || e.data.view === view) return;
       view = e.data.view;
-      frame.style.height = view === 'admin' ? '100vh' : '${height}px';
       frame.scrollIntoView({ block: 'start' });
     });
   })();
@@ -59,8 +58,8 @@ export default function EmbedPanel() {
         </div>
         <p className="field-help">
           In Webflow, drag an <b>Embed</b> element onto your survey page and paste this in. It holds both the survey
-          and this admin: the <b>Admin login</b> button under the welcome card opens it. Custom code needs a paid Site
-          plan.
+          and this admin: the <b>Admin login</b> button under the welcome card opens it. It fills the screen height, but
+          never gets shorter than the minimum below. Custom code needs a paid Site plan.
         </p>
         <div className="field-row field-row--checks">
           <label className="check">
@@ -69,13 +68,13 @@ export default function EmbedPanel() {
           </label>
         </div>
         <label className="field embed-height">
-          Survey height in pixels
+          Minimum height in pixels
           <input
             type="number"
             min={400}
             step={20}
-            value={height}
-            onChange={(e) => setHeight(Number(e.target.value) || 760)}
+            value={minHeight}
+            onChange={(e) => setMinHeight(Number(e.target.value) || 640)}
           />
         </label>
         <CodeBlock code={code} />

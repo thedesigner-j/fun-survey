@@ -50,7 +50,7 @@ git push -u origin main
 3. Deploy. From then on, every push to `main` redeploys.
 
 ### 5. Webflow
-Sign in to the admin, open the **Embed** tab and copy the code into a Webflow **Embed** element (a paid Site plan is needed for custom code). One embed holds both the survey and the admin: the **Admin login** button under the welcome card opens it, and the frame grows to full screen while the admin is open.
+Sign in to the admin, open the **Embed** tab and copy the code into a Webflow **Embed** element (a paid Site plan is needed for custom code). One embed holds both the survey and the admin: the **Admin login** button under the welcome card opens it. The frame fills the screen height (100vh) with a minimum height you can set in the Embed tab.
 
 Put the Webflow page address in `src/lib/site.js` (`PAGE_URL`), and in Supabase set **Authentication → URL Configuration → Site URL** to that page (also add it under **Redirect URLs**). Invite and password-reset emails then land on the Webflow page, and the embed passes the sign-in on to the admin.
 
