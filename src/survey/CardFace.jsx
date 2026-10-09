@@ -183,6 +183,7 @@ export default function CardFace({
       </div>
 
       <div className="card-body">
+        {card.section && <p className="card-section">{card.section}</p>}
         <h2 className="card-title">{card.title}</h2>
         {card.subtitle && <p className="card-subtitle">{card.subtitle}</p>}
 

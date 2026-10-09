@@ -8,7 +8,7 @@ import IllustrationPicker from './IllustrationPicker.jsx'
 import ColorPicker from './ColorPicker.jsx'
 import CardPreview from './CardPreview.jsx'
 
-const EDITABLE = ['type', 'title', 'subtitle', 'options', 'illustration', 'color', 'required', 'active']
+const EDITABLE = ['type', 'section', 'title', 'subtitle', 'options', 'illustration', 'color', 'required', 'active']
 
 function QuestionRow({ question, number, selected, onSelect, onToggle, onDragEnd }) {
   const controls = useDragControls()
@@ -257,6 +257,15 @@ export default function QuestionsPanel() {
             </div>
           </div>
 
+          <label className="field">
+            Section <span className="field-optional">optional</span>
+            <input
+              value={draft.section ?? ''}
+              onChange={(e) => patch({ section: e.target.value })}
+              maxLength={60}
+              placeholder="e.g. 01 · The Golden Arrival"
+            />
+          </label>
           <label className="field">
             Question
             <input value={draft.title} onChange={(e) => patch({ title: e.target.value })} maxLength={140} />

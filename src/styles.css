@@ -255,6 +255,15 @@ button {
   justify-content: center;
 }
 
+.card-section {
+  margin: 0 0 6px;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .card-title {
   margin: 0;
   font-size: clamp(22px, 5.6vw, 28px);
