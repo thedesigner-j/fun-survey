@@ -978,6 +978,43 @@
   font-weight: 700;
 }
 
+/* Embed */
+
+.embed {
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+}
+
+.embed-code {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.embed-code pre {
+  width: 100%;
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+  background: #1f1f1f;
+  color: #ffe08a;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  user-select: all;
+}
+
+.embed-height {
+  max-width: 180px;
+}
+
+.embed-steps {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
 @media (max-width: 1200px) {
   .q-layout {
     grid-template-columns: 280px minmax(0, 1fr);

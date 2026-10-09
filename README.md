@@ -63,6 +63,23 @@ Add an **Embed** element (a paid Site plan is needed for custom code) and paste:
 
 `?bg=transparent` lets your Webflow section's background show through. Leave it off to keep the survey's own cream background and color blobs.
 
+**Admin page.** Make a separate Webflow page (e.g. `/survey-admin`) and paste this Embed. It fills the screen, and it passes invite and password-reset links from the page's address into the admin:
+
+```html
+<iframe id="survey-admin" title="Survey admin" style="width:100%;height:100vh;border:0;display:block"></iframe>
+<script>
+  (function () {
+    var app = 'https://YOUR-PROJECT.vercel.app/admin';
+    document.getElementById('survey-admin').src = app + location.hash;
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  })();
+</script>
+```
+
+Then put both Webflow page URLs in `src/lib/site.js`, so the admin's "View survey" button and password-reset emails point at Webflow, and in Supabase set **Authentication → URL Configuration → Site URL** to the Webflow admin page (also add it under **Redirect URLs**). Invite emails go there.
+
+To keep the hosting address out of the page source too, add a subdomain like `survey.yourdomain.com` under **Vercel → Settings → Domains** and use it in the iframes.
+
 ## Admin guide
 - **Team (owner only):** add an editor's email, then send them an invite from **Supabase → Authentication → Users → Add user → Send invitation**. The email link opens the admin, where they pick a password. Before inviting anyone, set **Authentication → URL Configuration → Site URL** to your Vercel URL. Editors can do everything below except manage the team and delete responses.
 - **Questions:** add, duplicate, delete, drag to reorder (⋮⋮), and toggle to hide. Each question has a type (pick one, pick many, emoji rating, 0–10 slider, free text), helper text, an illustration (15 built-in, or upload your own PNG/SVG/GIF/WebP) and a card color. A live preview updates as you type.

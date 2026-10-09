@@ -4,7 +4,9 @@ import QuestionsPanel from './QuestionsPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import ResponsesPanel from './ResponsesPanel.jsx'
 import TeamPanel from './TeamPanel.jsx'
+import EmbedPanel from './EmbedPanel.jsx'
 import { Illustration } from '../illustrations/index.jsx'
+import { adminPage, surveyPage } from '../lib/site.js'
 import './admin.css'
 
 const TABS = [
@@ -12,6 +14,7 @@ const TABS = [
   { id: 'settings', label: 'Intro & Thanks' },
   { id: 'responses', label: 'Responses' },
   { id: 'team', label: 'Team', ownerOnly: true },
+  { id: 'embed', label: 'Embed' },
 ]
 
 function Login() {
@@ -29,7 +32,7 @@ function Login() {
     setBusy(true)
     setError('')
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/admin`,
+      redirectTo: adminPage,
     })
     setBusy(false)
     if (err) setError(err.message)
@@ -242,7 +245,7 @@ export default function Admin() {
           ))}
         </nav>
         <div className="admin-actions">
-          <a className="a-btn" href="/" target="_blank" rel="noreferrer">
+          <a className="a-btn" href={surveyPage} target="_blank" rel="noreferrer">
             View survey ↗
           </a>
           <button className="a-btn a-btn--ghost" onClick={() => setPasswordScreen('change')}>
@@ -258,6 +261,7 @@ export default function Admin() {
         {tab === 'settings' && <SettingsPanel />}
         {tab === 'responses' && <ResponsesPanel canDelete={role === 'owner'} />}
         {tab === 'team' && role === 'owner' && <TeamPanel ownerEmail={session.user.email} />}
+        {tab === 'embed' && <EmbedPanel />}
       </main>
     </div>
   )
