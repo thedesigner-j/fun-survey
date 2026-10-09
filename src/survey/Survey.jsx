@@ -23,11 +23,17 @@ import { announceView } from '../lib/site.js'
 const STACK_DEPTH = 3
 const SPRING = { type: 'spring', stiffness: 260, damping: 26 }
 
+// On phones the card fills the screen, so the same motion reads much bigger: tone it down there.
+const COMPACT = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
+const FLY = COMPACT
+  ? { x: '-112%', y: 24, rotateZ: -10, rotateY: 10, duration: 0.42 }
+  : { x: '-135%', y: 60, rotateZ: -24, rotateY: 28, duration: 0.55 }
+
 const pose = (depth) => ({
   x: 0,
-  y: depth * 26,
-  scale: 1 - depth * 0.06,
-  rotateZ: depth === 0 ? 0 : depth % 2 ? -3 : 2.5,
+  y: depth * (COMPACT ? 16 : 26),
+  scale: 1 - depth * (COMPACT ? 0.04 : 0.06),
+  rotateZ: depth === 0 ? 0 : (depth % 2 ? -3 : 2.5) * (COMPACT ? 0.5 : 1),
   rotateY: 0,
   opacity: depth >= STACK_DEPTH ? 0 : 1,
   filter: `brightness(${1 - depth * 0.05})`,
@@ -38,12 +44,12 @@ const variants = {
   exit: (direction) =>
     direction > 0
       ? {
-          x: '-135%',
-          y: 60,
-          rotateZ: -24,
-          rotateY: 28,
+          x: FLY.x,
+          y: FLY.y,
+          rotateZ: FLY.rotateZ,
+          rotateY: FLY.rotateY,
           opacity: 0,
-          transition: { duration: 0.55, ease: [0.55, 0.05, 0.35, 1] },
+          transition: { duration: FLY.duration, ease: [0.55, 0.05, 0.35, 1] },
         }
       : { ...pose(STACK_DEPTH), transition: { duration: 0.25 } },
 }
@@ -55,7 +61,7 @@ function DeckCard({ card, depth, direction, shakeKey, onSwipe, faceProps }) {
   const shake = useAnimationControls()
 
   const x = useMotionValue(0)
-  const dragTilt = useTransform(x, [-220, 220], [-14, 14])
+  const dragTilt = useTransform(x, [-220, 220], COMPACT ? [-8, 8] : [-14, 14])
 
   // Mouse-follow 3D tilt + shine
   const tiltX = useSpring(0, { stiffness: 180, damping: 18 })
@@ -93,14 +99,14 @@ function DeckCard({ card, depth, direction, shakeKey, onSwipe, faceProps }) {
       inert={!isTop}
       custom={direction}
       variants={variants}
-      initial={isTop && direction < 0 ? { x: '-135%', rotateZ: -24, rotateY: 28, opacity: 0 } : pose(STACK_DEPTH)}
+      initial={isTop && direction < 0 ? { x: FLY.x, rotateZ: FLY.rotateZ, rotateY: FLY.rotateY, opacity: 0 } : pose(STACK_DEPTH)}
       animate={pose(depth)}
       exit="exit"
       drag={isTop && onSwipe ? 'x' : false}
       dragControls={dragControls}
       dragListener={false}
       dragSnapToOrigin
-      dragElastic={0.55}
+      dragElastic={COMPACT ? 0.4 : 0.55}
       onDragEnd={(_, info) => {
         if (info.offset.x < -110 || info.velocity.x < -650) onSwipe(1)
         else if (info.offset.x > 110 || info.velocity.x > 650) onSwipe(-1)
