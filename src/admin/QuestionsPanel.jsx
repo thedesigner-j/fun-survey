@@ -135,7 +135,7 @@ export default function QuestionsPanel() {
     let options = draft.options
     if (needsOptions && options.length < 2) options = ['Option A', 'Option B']
     if (type === 'slider') options = ['Not at all', 'Absolutely']
-    if (type === 'rating' || type === 'text') options = []
+    if (type === 'rating' || type === 'text' || type === 'flight') options = []
     patch({ type, options })
   }
 

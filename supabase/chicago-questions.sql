@@ -4,6 +4,11 @@
 
 alter table public.questions add column if not exists section text not null default '';
 
+-- New "Flight" question type: date and time picker, airline and flight number.
+alter table public.questions drop constraint if exists questions_type_check;
+alter table public.questions add constraint questions_type_check
+  check (type in ('single', 'multi', 'text', 'rating', 'slider', 'flight'));
+
 update public.questions set active = false;
 
 -- 21 questions with room for long stories: allow bigger responses.
@@ -14,8 +19,8 @@ insert into public.questions (position, section, type, title, subtitle, options,
   -- 01. The Golden Arrival
   (1,  '01 · The Golden Arrival', 'text', 'What''s your name?', 'First, the boring-but-important stuff.', '[]', 'chat', '#FFC72C', true),
   (2,  '01 · The Golden Arrival', 'text', 'What''s your cell number?', 'So we can find you on the ground.', '[]', 'chat', '#FFE08A', true),
-  (3,  '01 · The Golden Arrival', 'text', 'When are you arriving in Chicago?', 'Date, time, airline, flight number.', '[]', 'rocket', '#FFF1C7', true),
-  (4,  '01 · The Golden Arrival', 'text', 'When are you departing?', 'Date, time, airline, flight number.', '[]', 'planet', '#FFC72C', true),
+  (3,  '01 · The Golden Arrival', 'flight', 'When are you arriving in Chicago?', 'Your landing time, airline and flight number.', '[]', 'rocket', '#FFF1C7', true),
+  (4,  '01 · The Golden Arrival', 'flight', 'When are you departing?', 'Your takeoff time, airline and flight number.', '[]', 'planet', '#FFC72C', true),
   (5,  '01 · The Golden Arrival', 'text', 'Where are you staying?', 'Hotel name.', '[]', 'star', '#FFE08A', true),
   (6,  '01 · The Golden Arrival', 'text', 'Do you need help with transportation or have any special travel considerations?', '', '[]', 'bag', '#F5DEB8', false),
   (7,  '01 · The Golden Arrival', 'text', 'Any meetings, commitments, or timing constraints we should know about?', '', '[]', 'bulb', '#FFF1C7', false),

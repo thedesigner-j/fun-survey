@@ -146,7 +146,36 @@ function TextAnswer({ question, value = '', onChange }) {
   )
 }
 
-const INPUTS = { single: SingleChoice, multi: MultiChoice, rating: Rating, slider: Slider, text: TextAnswer }
+function FlightAnswer({ question, value = {}, onChange }) {
+  const set = (field) => (e) => onChange({ ...value, [field]: e.target.value })
+  return (
+    <div className="flight-answer">
+      <label className="flight-field">
+        Date and time
+        <input type="datetime-local" value={value.when ?? ''} onChange={set('when')} aria-label={`${question.title}: date and time`} />
+      </label>
+      <div className="flight-row">
+        <label className="flight-field">
+          Airline
+          <input value={value.airline ?? ''} onChange={set('airline')} maxLength={60} placeholder="United" autoComplete="off" />
+        </label>
+        <label className="flight-field">
+          Flight number
+          <input value={value.flight ?? ''} onChange={set('flight')} maxLength={20} placeholder="UA 1234" autoComplete="off" />
+        </label>
+      </div>
+    </div>
+  )
+}
+
+const INPUTS = {
+  single: SingleChoice,
+  multi: MultiChoice,
+  rating: Rating,
+  slider: Slider,
+  text: TextAnswer,
+  flight: FlightAnswer,
+}
 
 export default function CardFace({
   card,

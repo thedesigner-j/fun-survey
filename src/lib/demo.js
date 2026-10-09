@@ -39,9 +39,9 @@ export const DEMO_QUESTIONS = [
   {
     "id": "demo-3",
     "section": "01 · The Golden Arrival",
-    "type": "text",
+    "type": "flight",
     "title": "When are you arriving in Chicago?",
-    "subtitle": "Date, time, airline, flight number.",
+    "subtitle": "Your landing time, airline and flight number.",
     "options": [],
     "illustration": "rocket",
     "color": "#FFF1C7",
@@ -50,9 +50,9 @@ export const DEMO_QUESTIONS = [
   {
     "id": "demo-4",
     "section": "01 · The Golden Arrival",
-    "type": "text",
+    "type": "flight",
     "title": "When are you departing?",
-    "subtitle": "Date, time, airline, flight number.",
+    "subtitle": "Your takeoff time, airline and flight number.",
     "options": [],
     "illustration": "planet",
     "color": "#FFC72C",

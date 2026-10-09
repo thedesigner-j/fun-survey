@@ -1,14 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { supabase } from '../lib/supabase.js'
-import { RATING_FACES } from '../lib/constants.js'
+import { RATING_FACES, formatAnswer } from '../lib/constants.js'
 import { Illustration } from '../illustrations/index.jsx'
-
-const formatAnswer = (a) => {
-  if (Array.isArray(a)) return a.join(', ')
-  if (a === undefined || a === null) return ''
-  return String(a)
-}
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
@@ -72,7 +66,7 @@ function Summary({ question, responses }) {
   return (
     <ul className="quotes">
       {values.slice(0, 5).map((v, i) => (
-        <li key={i}>“{v}”</li>
+        <li key={i}>“{formatAnswer(v)}”</li>
       ))}
       {values.length > 5 && <li className="quotes-more">+{values.length - 5} more in the table below</li>}
       {!values.length && <li className="quotes-more">No answers yet</li>}
