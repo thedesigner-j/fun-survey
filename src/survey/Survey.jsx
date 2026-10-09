@@ -21,19 +21,22 @@ import { isAnswered } from '../lib/constants.js'
 import { announceView } from '../lib/site.js'
 
 const STACK_DEPTH = 3
-const SPRING = { type: 'spring', stiffness: 260, damping: 26 }
 
 // On phones the card fills the screen, so the same motion reads much bigger: tone it down there.
 const COMPACT = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
+// Mobile: a slow, soft slide with barely any rotation and a spring that settles without bouncing.
 const FLY = COMPACT
-  ? { x: '-112%', y: 24, rotateZ: -10, rotateY: 10, duration: 0.42 }
-  : { x: '-135%', y: 60, rotateZ: -24, rotateY: 28, duration: 0.55 }
+  ? { x: '-105%', y: 0, rotateZ: -4, rotateY: 0, duration: 0.8, ease: [0.45, 0, 0.25, 1] }
+  : { x: '-135%', y: 60, rotateZ: -24, rotateY: 28, duration: 0.55, ease: [0.55, 0.05, 0.35, 1] }
+const SPRING = COMPACT
+  ? { type: 'spring', stiffness: 110, damping: 22 }
+  : { type: 'spring', stiffness: 260, damping: 26 }
 
 const pose = (depth) => ({
   x: 0,
   y: depth * (COMPACT ? 16 : 26),
   scale: 1 - depth * (COMPACT ? 0.04 : 0.06),
-  rotateZ: depth === 0 ? 0 : (depth % 2 ? -3 : 2.5) * (COMPACT ? 0.5 : 1),
+  rotateZ: depth === 0 ? 0 : (depth % 2 ? -3 : 2.5) * (COMPACT ? 0.3 : 1),
   rotateY: 0,
   opacity: depth >= STACK_DEPTH ? 0 : 1,
   filter: `brightness(${1 - depth * 0.05})`,
@@ -49,9 +52,9 @@ const variants = {
           rotateZ: FLY.rotateZ,
           rotateY: FLY.rotateY,
           opacity: 0,
-          transition: { duration: FLY.duration, ease: [0.55, 0.05, 0.35, 1] },
+          transition: { duration: FLY.duration, ease: FLY.ease },
         }
-      : { ...pose(STACK_DEPTH), transition: { duration: 0.25 } },
+      : { ...pose(STACK_DEPTH), transition: { duration: COMPACT ? 0.4 : 0.25 } },
 }
 
 function DeckCard({ card, depth, direction, shakeKey, onSwipe, faceProps }) {
@@ -61,7 +64,7 @@ function DeckCard({ card, depth, direction, shakeKey, onSwipe, faceProps }) {
   const shake = useAnimationControls()
 
   const x = useMotionValue(0)
-  const dragTilt = useTransform(x, [-220, 220], COMPACT ? [-8, 8] : [-14, 14])
+  const dragTilt = useTransform(x, [-220, 220], COMPACT ? [-5, 5] : [-14, 14])
 
   // Mouse-follow 3D tilt + shine
   const tiltX = useSpring(0, { stiffness: 180, damping: 18 })
