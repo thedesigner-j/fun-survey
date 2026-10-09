@@ -11,12 +11,14 @@ import {
   useSpring,
   useTransform,
 } from 'motion/react'
+import { Link, useLocation } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import CardFace from './CardFace.jsx'
 import { supabase, isConfigured } from '../lib/supabase.js'
 import { DEMO_QUESTIONS, DEMO_SETTINGS } from '../lib/demo.js'
 import { introCard, outroCard, questionCard } from '../lib/cards.js'
 import { isAnswered } from '../lib/constants.js'
+import { announceView } from '../lib/site.js'
 
 const STACK_DEPTH = 3
 const SPRING = { type: 'spring', stiffness: 260, damping: 26 }
@@ -144,6 +146,9 @@ export default function Survey() {
   const [error, setError] = useState('')
   const answersRef = useRef(answers)
   const advanceTimer = useRef()
+  const { search } = useLocation()
+
+  useEffect(() => announceView('survey'), [])
 
   useEffect(() => {
     if (!isConfigured) {
@@ -325,7 +330,18 @@ export default function Survey() {
           </AnimatePresence>
         </div>
 
-        {data.demo && <p className="demo-badge">Demo mode — connect Supabase to save answers</p>}
+        <div className="survey-foot">
+          <AnimatePresence>
+            {index === 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <Link className="admin-link" to={`/admin${search}`}>
+                  Admin login
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {data.demo && <p className="demo-badge">Demo mode — connect Supabase to save answers</p>}
+        </div>
       </main>
     </MotionConfig>
   )

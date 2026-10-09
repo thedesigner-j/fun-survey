@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { supabase, isConfigured, authLinkType } from '../lib/supabase.js'
 import QuestionsPanel from './QuestionsPanel.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
@@ -6,7 +7,7 @@ import ResponsesPanel from './ResponsesPanel.jsx'
 import TeamPanel from './TeamPanel.jsx'
 import EmbedPanel from './EmbedPanel.jsx'
 import { Illustration } from '../illustrations/index.jsx'
-import { adminPage, surveyPage } from '../lib/site.js'
+import { announceView, authRedirect } from '../lib/site.js'
 import './admin.css'
 
 const TABS = [
@@ -32,7 +33,7 @@ function Login() {
     setBusy(true)
     setError('')
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: adminPage,
+      redirectTo: authRedirect,
     })
     setBusy(false)
     if (err) setError(err.message)
@@ -150,6 +151,7 @@ function SetPassword({ email, invited, onDone }) {
 }
 
 export default function Admin() {
+  const { search } = useLocation()
   const [session, setSession] = useState(undefined)
   // 'owner' | 'editor' | null (signed in, no access) | undefined (checking)
   const [role, setRole] = useState(undefined)
@@ -157,6 +159,8 @@ export default function Admin() {
   const [passwordScreen, setPasswordScreen] = useState(
     authLinkType === 'invite' || authLinkType === 'recovery' ? authLinkType : null,
   )
+
+  useEffect(() => announceView('admin'), [])
 
   useEffect(() => {
     if (!isConfigured) return
@@ -245,9 +249,9 @@ export default function Admin() {
           ))}
         </nav>
         <div className="admin-actions">
-          <a className="a-btn" href={surveyPage} target="_blank" rel="noreferrer">
-            View survey ↗
-          </a>
+          <Link className="a-btn" to={`/${search}`}>
+            ← Back to survey
+          </Link>
           <button className="a-btn a-btn--ghost" onClick={() => setPasswordScreen('change')}>
             Password
           </button>

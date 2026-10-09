@@ -11,7 +11,7 @@ export const authLinkType = new URLSearchParams(window.location.hash.slice(1)).g
 
 // Those links point at the site root (the survey), so move them to the admin first.
 if ((authLinkType === 'invite' || authLinkType === 'recovery') && !window.location.pathname.startsWith('/admin')) {
-  window.history.replaceState(null, '', '/admin' + window.location.hash)
+  window.history.replaceState(null, '', '/admin' + window.location.search + window.location.hash)
 }
 
 export const supabase = isConfigured ? createClient(url, key) : null

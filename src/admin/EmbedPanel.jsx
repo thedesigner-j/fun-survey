@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { appUrl, ADMIN_PAGE_URL } from '../lib/site.js'
+import { appUrl, PAGE_URL } from '../lib/site.js'
 
 function CodeBlock({ code }) {
   const [copied, setCopied] = useState(false)
 
   const copy = async (e) => {
+    const pre = e.currentTarget.parentElement.querySelector('pre')
     try {
       await navigator.clipboard.writeText(code)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
       // Clipboard can be blocked inside an iframe: select the code so it can be copied by hand.
-      const pre = e.currentTarget.parentElement.querySelector('pre')
       window.getSelection().selectAllChildren(pre)
     }
   }
@@ -30,20 +30,24 @@ export default function EmbedPanel() {
   const [transparent, setTransparent] = useState(true)
   const [height, setHeight] = useState(760)
 
-  const surveyCode = `<iframe
-  src="${appUrl}/${transparent ? '?bg=transparent' : ''}"
-  style="width:100%;height:${height}px;border:0;display:block"
-  title="Survey"
-  loading="lazy"
-></iframe>`
-
-  const adminCode = `<iframe id="survey-admin" title="Survey admin" allow="clipboard-write"
-  style="width:100%;height:100vh;border:0;display:block"></iframe>
+  const code = `<iframe id="fun-survey" title="Survey" allow="clipboard-write"
+  style="width:100%;height:${height}px;border:0;display:block"></iframe>
 <script>
   (function () {
-    var app = '${appUrl}/admin';
-    document.getElementById('survey-admin').src = app + location.hash;
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    var app = '${appUrl}';
+    var frame = document.getElementById('fun-survey');
+    var view = 'survey';
+    // Invite and password-reset emails land here with a sign-in token: hand it to the admin.
+    var auth = /access_token|error_description/.test(location.hash) ? location.hash : '';
+    frame.src = app + '/${transparent ? '?bg=transparent' : ''}' + auth;
+    if (auth) history.replaceState(null, '', location.pathname + location.search);
+    // The admin gets the full screen; the survey goes back to its own height.
+    window.addEventListener('message', function (e) {
+      if (e.origin !== app || !e.data || e.data.type !== 'fun-survey:view' || e.data.view === view) return;
+      view = e.data.view;
+      frame.style.height = view === 'admin' ? '100vh' : '${height}px';
+      frame.scrollIntoView({ block: 'start' });
+    });
   })();
 </script>`
 
@@ -51,11 +55,12 @@ export default function EmbedPanel() {
     <div className="embed">
       <section className="q-editor">
         <div className="panel-head">
-          <h2>Survey embed</h2>
+          <h2>Webflow embed</h2>
         </div>
         <p className="field-help">
-          In Webflow, drag an <b>Embed</b> element onto your survey page and paste this in. Custom code needs a paid
-          Site plan.
+          In Webflow, drag an <b>Embed</b> element onto your survey page and paste this in. It holds both the survey
+          and this admin: the <b>Admin login</b> button under the welcome card opens it. Custom code needs a paid Site
+          plan.
         </p>
         <div className="field-row field-row--checks">
           <label className="check">
@@ -64,7 +69,7 @@ export default function EmbedPanel() {
           </label>
         </div>
         <label className="field embed-height">
-          Height in pixels
+          Survey height in pixels
           <input
             type="number"
             min={400}
@@ -73,18 +78,7 @@ export default function EmbedPanel() {
             onChange={(e) => setHeight(Number(e.target.value) || 760)}
           />
         </label>
-        <CodeBlock code={surveyCode} />
-      </section>
-
-      <section className="q-editor">
-        <div className="panel-head">
-          <h2>Admin embed</h2>
-        </div>
-        <p className="field-help">
-          Make a separate Webflow page for the admin (for example <b>/survey-admin</b>), add an <b>Embed</b> element and
-          paste this in. It fills the screen and signs people in from invite and password-reset emails.
-        </p>
-        <CodeBlock code={adminCode} />
+        <CodeBlock code={code} />
       </section>
 
       <section className="q-editor">
@@ -92,19 +86,12 @@ export default function EmbedPanel() {
           <h2>Finish setup</h2>
         </div>
         <ol className="embed-steps">
+          <li>Publish the Webflow page.</li>
           <li>
-            Publish both Webflow pages. Tip: in the admin page's settings, turn off <b>search engine indexing</b>.
+            In Supabase, open <b>Authentication → URL Configuration</b>. Set <b>Site URL</b> to{' '}
+            <b>{PAGE_URL || 'your Webflow survey page'}</b> and add the same address under <b>Redirect URLs</b>, so
+            invite and password emails open on your Webflow page.
           </li>
-          <li>
-            In Supabase, open <b>Authentication → URL Configuration</b>. Set <b>Site URL</b> to your Webflow admin page
-            and add it under <b>Redirect URLs</b>, so invite and password emails open in Webflow.
-          </li>
-          {!ADMIN_PAGE_URL && (
-            <li>
-              Put both Webflow page addresses in <code>src/lib/site.js</code> so the "View survey" button and
-              password-reset emails point at Webflow too.
-            </li>
-          )}
         </ol>
       </section>
     </div>

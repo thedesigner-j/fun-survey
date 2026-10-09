@@ -50,35 +50,9 @@ git push -u origin main
 3. Deploy. From then on, every push to `main` redeploys.
 
 ### 5. Webflow
-Add an **Embed** element (a paid Site plan is needed for custom code) and paste:
+Sign in to the admin, open the **Embed** tab and copy the code into a Webflow **Embed** element (a paid Site plan is needed for custom code). One embed holds both the survey and the admin: the **Admin login** button under the welcome card opens it, and the frame grows to full screen while the admin is open.
 
-```html
-<iframe
-  src="https://YOUR-PROJECT.vercel.app/?bg=transparent"
-  style="width:100%;height:760px;border:0;display:block"
-  title="Survey"
-  loading="lazy"
-></iframe>
-```
-
-`?bg=transparent` lets your Webflow section's background show through. Leave it off to keep the survey's own cream background and color blobs.
-
-**Admin page.** Make a separate Webflow page (e.g. `/survey-admin`) and paste this Embed. It fills the screen, and it passes invite and password-reset links from the page's address into the admin:
-
-```html
-<iframe id="survey-admin" title="Survey admin" style="width:100%;height:100vh;border:0;display:block"></iframe>
-<script>
-  (function () {
-    var app = 'https://YOUR-PROJECT.vercel.app/admin';
-    document.getElementById('survey-admin').src = app + location.hash;
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  })();
-</script>
-```
-
-Then put both Webflow page URLs in `src/lib/site.js`, so the admin's "View survey" button and password-reset emails point at Webflow, and in Supabase set **Authentication → URL Configuration → Site URL** to the Webflow admin page (also add it under **Redirect URLs**). Invite emails go there.
-
-To keep the hosting address out of the page source too, add a subdomain like `survey.yourdomain.com` under **Vercel → Settings → Domains** and use it in the iframes.
+Put the Webflow page address in `src/lib/site.js` (`PAGE_URL`), and in Supabase set **Authentication → URL Configuration → Site URL** to that page (also add it under **Redirect URLs**). Invite and password-reset emails then land on the Webflow page, and the embed passes the sign-in on to the admin.
 
 ## Admin guide
 - **Team (owner only):** add an editor's email, then send them an invite from **Supabase → Authentication → Users → Add user → Send invitation**. The email link opens the admin, where they pick a password. Before inviting anyone, set **Authentication → URL Configuration → Site URL** to your Vercel URL. Editors can do everything below except manage the team and delete responses.
