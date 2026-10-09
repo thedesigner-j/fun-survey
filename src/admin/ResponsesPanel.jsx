@@ -113,7 +113,7 @@ export default function ResponsesPanel({ canDelete }) {
     }
   }, [])
 
-  // Current questions first (in order), then any answered questions that have since been deleted.
+  // One column per current question, in order.
   const columns = useMemo(() => {
     const cols = []
     for (const q of questions) {
@@ -121,19 +121,9 @@ export default function ResponsesPanel({ canDelete }) {
       if (q.type === 'flight') FLIGHT_PARTS.forEach(([part, label]) => cols.push({ ...base, part, label }))
       else cols.push(base)
     }
-    const known = new Set(questions.map((q) => q.id))
-    for (const r of responses) {
-      for (const [id, { q, a }] of Object.entries(r.answers ?? {})) {
-        if (known.has(id)) continue
-        known.add(id)
-        const base = { id, title: q, section: 'Deleted questions' }
-        if (a && typeof a === 'object' && !Array.isArray(a)) {
-          FLIGHT_PARTS.forEach(([part, label]) => cols.push({ ...base, part, label }))
-        } else cols.push(base)
-      }
-    }
+    // Answers to deleted questions stay in the database but are left out of the table and CSV.
     return cols
-  }, [questions, responses])
+  }, [questions])
 
   // Header bands: consecutive columns that share a section, then each question over its flight parts.
   const bands = useMemo(() => {

@@ -172,7 +172,7 @@ export default function QuestionsPanel() {
   }
 
   const remove = async () => {
-    if (!confirm(`Delete “${selected.title}”? This can't be undone.`)) return
+    if (!confirm(`Delete “${selected.title}”? It's removed from the survey and from the Responses table. This can't be undone.`)) return
     const { error } = await supabase.from('questions').delete().eq('id', selected.id)
     if (error) {
       setStatus(error.message)
