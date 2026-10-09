@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
-const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]
+const projectRef = (import.meta.env.VITE_SUPABASE_URL ?? '').replace(/^https?:\/\//, '').split('.')[0]
 const INVITE_PAGE = `https://supabase.com/dashboard/project/${projectRef}/auth/users`
 
 export default function TeamPanel({ ownerEmail }) {
