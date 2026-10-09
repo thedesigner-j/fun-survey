@@ -1,19 +1,30 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { supabase } from '../lib/supabase.js'
-import { RATING_FACES, formatAnswer } from '../lib/constants.js'
+import { RATING_FACES, formatAnswer, formatWhen } from '../lib/constants.js'
 import { Illustration } from '../illustrations/index.jsx'
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
+const FLIGHT_PARTS = [
+  ['when', 'Date & time'],
+  ['airline', 'Airline'],
+  ['flight', 'Flight #'],
+]
+
+// One column per answer; flight questions split into date, airline and flight number.
+function cellValue(response, col) {
+  const a = response.answers?.[col.id]?.a
+  if (!col.part) return formatAnswer(a)
+  const v = a?.[col.part] ?? ''
+  return col.part === 'when' ? formatWhen(v) : v
+}
+
 function downloadCsv(columns, responses) {
   const escape = (v) => `"${String(v).replaceAll('"', '""')}"`
-  const header = ['Submitted', ...columns.map((c) => c.title)]
-  const rows = responses.map((r) => [
-    new Date(r.created_at).toISOString(),
-    ...columns.map((c) => formatAnswer(r.answers[c.id]?.a)),
-  ])
+  const header = ['Submitted', ...columns.map((c) => (c.part ? `${c.title} — ${c.label}` : c.title))]
+  const rows = responses.map((r) => [new Date(r.created_at).toISOString(), ...columns.map((c) => cellValue(r, c))])
   const csv = [header, ...rows].map((row) => row.map(escape).join(',')).join('\n')
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
   const link = document.createElement('a')
@@ -104,18 +115,43 @@ export default function ResponsesPanel({ canDelete }) {
 
   // Current questions first (in order), then any answered questions that have since been deleted.
   const columns = useMemo(() => {
-    const cols = questions.map((q) => ({ id: q.id, title: q.title }))
-    const known = new Set(cols.map((c) => c.id))
+    const cols = []
+    for (const q of questions) {
+      const base = { id: q.id, title: q.title, section: q.section || '' }
+      if (q.type === 'flight') FLIGHT_PARTS.forEach(([part, label]) => cols.push({ ...base, part, label }))
+      else cols.push(base)
+    }
+    const known = new Set(questions.map((q) => q.id))
     for (const r of responses) {
-      for (const [id, { q }] of Object.entries(r.answers ?? {})) {
-        if (!known.has(id)) {
-          known.add(id)
-          cols.push({ id, title: `${q} (deleted)` })
-        }
+      for (const [id, { q, a }] of Object.entries(r.answers ?? {})) {
+        if (known.has(id)) continue
+        known.add(id)
+        const base = { id, title: q, section: 'Deleted questions' }
+        if (a && typeof a === 'object' && !Array.isArray(a)) {
+          FLIGHT_PARTS.forEach(([part, label]) => cols.push({ ...base, part, label }))
+        } else cols.push(base)
       }
     }
     return cols
   }, [questions, responses])
+
+  // Header bands: consecutive columns that share a section, then each question over its flight parts.
+  const bands = useMemo(() => {
+    const group = (key) =>
+      columns.reduce((out, c) => {
+        const last = out[out.length - 1]
+        if (last && last.key === key(c)) last.span++
+        else out.push({ key: key(c), col: c, span: 1 })
+        return out
+      }, [])
+    return { sections: group((c) => c.section), questions: group((c) => c.id) }
+  }, [columns])
+
+  const hasSections = columns.some((c) => c.section)
+  // Keep the first answer (the name) in view while scrolling sideways.
+  const pinFirst = columns.length > 0 && !columns[0].part
+  const [view, setView] = useState('table')
+  const [open, setOpen] = useState(null)
 
   const remove = async (id) => {
     if (!confirm('Delete this response?')) return
@@ -156,7 +192,21 @@ export default function ResponsesPanel({ canDelete }) {
         </button>
       </div>
 
-      {questions.length > 0 && (
+      <div className="r-toolbar">
+        <div className="type-tabs type-tabs--two">
+          <button type="button" className={view === 'table' ? 'is-active' : ''} onClick={() => setView('table')}>
+            Table
+          </button>
+          <button type="button" className={view === 'summary' ? 'is-active' : ''} onClick={() => setView('summary')}>
+            Summary
+          </button>
+        </div>
+        {view === 'table' && responses.length > 0 && (
+          <span className="field-help">Click a row to read the whole response.</span>
+        )}
+      </div>
+
+      {view === 'summary' && questions.length > 0 && (
         <div className="summary-grid">
           {questions.map((q) => (
             <div key={q.id} className="summary-card">
@@ -172,49 +222,130 @@ export default function ResponsesPanel({ canDelete }) {
         </div>
       )}
 
-      <h2 className="section-title">All responses</h2>
-      {responses.length === 0 ? (
-        <p className="admin-empty">No responses yet. Share that survey! 🚀</p>
-      ) : (
-        <div className="table-wrap">
-          <table className="r-table">
-            <thead>
-              <tr>
-                <th>Submitted</th>
-                {columns.map((c) => (
-                  <th key={c.id}>{c.title}</th>
-                ))}
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence initial={false}>
-                {responses.map((r) => (
-                  <motion.tr
-                    key={r.id}
-                    layout
-                    initial={{ opacity: 0, backgroundColor: '#fff3bf' }}
-                    animate={{ opacity: 1, backgroundColor: fresh.has(r.id) ? '#fff9db' : 'rgba(255,255,255,0)' }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <td className="r-date">{formatDate(r.created_at)}</td>
-                    {columns.map((c) => (
-                      <td key={c.id}>{formatAnswer(r.answers?.[c.id]?.a)}</td>
+      {view === 'table' &&
+        (responses.length === 0 ? (
+          <p className="admin-empty">No responses yet. Share that survey! 🚀</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="r-table">
+              <thead>
+                {hasSections && (
+                  <tr className="r-sections">
+                    <th className="r-sticky" />
+                    {bands.sections.map((b, i) => (
+                      <th key={i} colSpan={b.span}>
+                        <span>{b.key}</span>
+                      </th>
                     ))}
-                    <td>
-                      {canDelete && (
-                        <button className="a-btn a-btn--icon" onClick={() => remove(r.id)} aria-label="Delete response">
-                          ×
-                        </button>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
-      )}
+                    <th />
+                    <th />
+                  </tr>
+                )}
+                <tr>
+                  <th className="r-sticky">#</th>
+                  {bands.questions.map((b, i) => (
+                    <th
+                      key={b.key}
+                      colSpan={b.span}
+                      rowSpan={b.col.part ? 1 : 2}
+                      title={b.col.title}
+                      className={i === 0 && pinFirst ? 'r-sticky r-sticky--name' : undefined}
+                    >
+                      <span className="r-head">{b.col.title}</span>
+                    </th>
+                  ))}
+                  <th rowSpan={2}>Submitted</th>
+                  <th rowSpan={2} aria-label="Actions" />
+                </tr>
+                <tr className="r-parts">
+                  <th className="r-sticky" />
+                  {columns.filter((c) => c.part).map((c) => (
+                    <th key={c.id + c.part}>{c.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence initial={false}>
+                  {responses.map((r, i) => (
+                    <motion.tr
+                      key={r.id}
+                      layout
+                      className={fresh.has(r.id) ? 'is-fresh' : ''}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setOpen(r)}
+                    >
+                      <td className="r-sticky r-num">{responses.length - i}</td>
+                      {columns.map((c, j) => (
+                        <td
+                          key={c.id + (c.part ?? '')}
+                          className={c.part ? 'r-nowrap' : j === 0 && pinFirst ? 'r-sticky r-sticky--name' : ''}
+                        >
+                          <span className="r-clamp">{cellValue(r, c) || <span className="r-blank">—</span>}</span>
+                        </td>
+                      ))}
+                      <td className="r-date">{formatDate(r.created_at)}</td>
+                      <td>
+                        {canDelete && (
+                          <button
+                            className="a-btn a-btn--icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              remove(r.id)
+                            }}
+                            aria-label="Delete response"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="r-drawer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpen(null)}
+          >
+            <motion.aside
+              className="r-drawer"
+              initial={{ x: 40 }}
+              animate={{ x: 0 }}
+              exit={{ x: 40 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="panel-head">
+                <h2>Response</h2>
+                <button className="a-btn a-btn--icon" onClick={() => setOpen(null)} aria-label="Close">
+                  ×
+                </button>
+              </div>
+              <p className="field-help">Submitted {formatDate(open.created_at)}</p>
+              <dl className="r-detail">
+                {bands.questions.map(({ col }) => {
+                  const a = formatAnswer(open.answers?.[col.id]?.a)
+                  return (
+                    <div key={col.id}>
+                      <dt>{col.title}</dt>
+                      <dd>{a || <span className="r-blank">No answer</span>}</dd>
+                    </div>
+                  )
+                })}
+              </dl>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
